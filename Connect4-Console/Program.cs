@@ -10,7 +10,7 @@ namespace Connect4_Console
     {
         static void Main(string[] args)
         {
-
+            Console.WriteLine("Hello Connect4");
         }
     }
 }
