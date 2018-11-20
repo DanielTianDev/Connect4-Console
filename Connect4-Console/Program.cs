@@ -16,19 +16,24 @@ namespace Connect4_Console
         static readonly int PLAYER_1 = 1;
         static readonly int PLAYER_2 = 2;
 
-        static int MaxDepth = 1;
+        static int MaxDepth = 2;
+
+
+        static int tempCounter = 0;
 
         static void Main(string[] args)
         {
+
+            //Console.WriteLine("\nWinning moves: " + GetWinningMoveCount(Board, PLAYER_2));
+
+            Board[5, 0] = 1;
+            Board[5, 1] = 1;
+            //Board[5, 2] = 1;
+
+            //PrintBoard(Board);
+            int score = Minimax(Board, MaxDepth, 0, true);
+            
             /*
-            Console.WriteLine("\nWinning moves: " + GetWinningMoveCount(Board, PLAYER_2));
-
-
-            Board[2, 3] = 1;
-            Board[3, 4] = 1;
-            Board[4, 5] = 1;
-            Board[5, 6] = 1;
-            PrintBoard(Board);
 
             int[,] hhhh = CopyBoard(Board);
             PlacePiece(1, hhhh, PLAYER_2); 
@@ -44,13 +49,14 @@ namespace Connect4_Console
                 if (int.TryParse(Console.ReadLine(), out input))
                 {
                     
-                    if (!PlacePiece(input, Board, PLAYER_2)) continue;
+                    if (!PlacePiece(input, Board, PLAYER_1)) continue;
                     PrintBoard(Board);
 
-                    int colIndex = FindBestMove(Board, MaxDepth);
-                    PlacePiece(colIndex+1, Board, PLAYER_1);
+                    //int colIndex = FindBestMove(Board, MaxDepth);
 
-                    PrintBoard(Board);
+                    //PlacePiece(colIndex+1, Board, PLAYER_2);
+
+                    //PrintBoard(Board);
 
                     /*
                     int maxScore = -10000, tempIndex = 0;
@@ -84,70 +90,35 @@ namespace Connect4_Console
             //Console.WriteLine("\nWinning moves: " + GetWinningMoveCount(Board, PLAYER_1));
         }
 
-        static int FindBestMove(int[,] board, int maxDepth) //for player
-        {
-            int bestVal = -10000;
-            int bestMoveColumnIndex = 0;
 
-            for(int col = 0; col < board.GetLength(1); col++)
-            {
-                //check if board empty
-                if (Board[0, col] == 0)
-                {
-                    //make the move
-                    int[,] tempBoard = CopyBoard(board);
-                    PlacePiece(col, tempBoard, PLAYER_1);
-
-                    int moveVal = Minimax(tempBoard, maxDepth, 0, false);
-
-                    //undo move
-                   // RemovePiece(col, board, PLAYER_1);
-
-                    if(moveVal > bestVal)
-                    {
-                        bestMoveColumnIndex = col;
-                        bestVal = moveVal;
-                    }
-
-                }
-            }
-
-            Console.WriteLine("The value of the best Move is : " + bestVal);
-
-            return bestMoveColumnIndex;
-        }
-
-        //https://www.geeksforgeeks.org/minimax-algorithm-in-game-theory-set-3-tic-tac-toe-ai-finding-optimal-move/
         static int Minimax(int[,] board, int maxDepth, int currentDepth, bool isMax)
         {
-            int score = Evaluate(board);
+            
 
+            int score = Evaluate(board);
             if (score == 1000) return score;
             if (score == -1000) return score; //minimizer won
+            if (!IsMovesLeft() || currentDepth >= maxDepth)
+            {
+                return Evaluate(board);
+            }
 
-            // If there are no more moves and no winner then 
-            // it is a tie 
-            if (!IsMovesLeft() || currentDepth >= maxDepth) return Evaluate(board);
 
             if (isMax)
             {
-                int best = -10000;
+                int best = int.MinValue;//-10000;
                 //traverse all cells
-                for(int col = 0; col < Board.GetLength(1); col++)
+                for (int col = 0; col < Board.GetLength(1); col++)
                 {
                     if (Board[0, col] == 0) //check if empty
                     {
                         //make the move
                         int[,] tempBoard = CopyBoard(board);
-                        PlacePiece(col, tempBoard, PLAYER_1);
-
+                        PlacePiece(col+1, tempBoard, PLAYER_1);
 
                         //call minimax recursively and choose the max value
-                        int result = Minimax(board, maxDepth, currentDepth + 1, !isMax);
+                        int result = Minimax(tempBoard, maxDepth, currentDepth + 1, !isMax);
                         if (result > best) best = result;
-
-                        //undo the move
-                        //RemovePiece(col, board, PLAYER_1);
 
                     }
                 }
@@ -156,7 +127,7 @@ namespace Connect4_Console
             }
             else// If this minimizer's move 
             {
-                int best = 10000;
+                int best = int.MaxValue;
 
                 //traverse all cells
                 for (int col = 0; col < Board.GetLength(1); col++)
@@ -167,22 +138,123 @@ namespace Connect4_Console
                         int[,] tempBoard = CopyBoard(board);
                         PlacePiece(col, tempBoard, PLAYER_2);
 
-                        //call minimax recursively and choose the max value
-                        int result = Minimax(board, maxDepth, currentDepth + 1, !isMax);
-                        if (result < best) best = result;
+                        tempCounter++;
+                        if (currentDepth == 1) { Console.WriteLine("Current depth: " + currentDepth + " ismax: " + isMax); PrintBoard(board); }
 
-                        //undo the move
-                        //RemovePiece(col, board, PLAYER_2);
+                        //call minimax recursively and choose the max value
+                        int result = Minimax(tempBoard, maxDepth, currentDepth + 1, !isMax);
+                        if (result < best) best = result;
 
                     }
                 }
 
                 return best;
             }
+
+
         }
 
+            /*
+            static int FindBestMove(int[,] board, int maxDepth) //for player
+            {
+                int bestVal = -10000;
+                int bestMoveColumnIndex = 0;
 
-        static int[,] CopyBoard(int[,] board)
+                for(int col = 0; col < board.GetLength(1); col++)
+                {
+                    //check if board empty
+                    if (Board[0, col] == 0)
+                    {
+                        //make the move
+                        int[,] tempBoard = CopyBoard(board);
+                        PlacePiece(col, tempBoard, PLAYER_2);
+
+                        int moveVal = Minimax(tempBoard, maxDepth, 0, false);
+
+                        //undo move
+                       // RemovePiece(col, board, PLAYER_1);
+
+                        if(moveVal > bestVal)
+                        {
+                            bestMoveColumnIndex = col;
+                            bestVal = moveVal;
+                        }
+
+                    }
+                }
+
+                Console.WriteLine("The value of the best Move is : " + bestVal);
+
+                return bestMoveColumnIndex;
+            }
+
+            //https://www.geeksforgeeks.org/minimax-algorithm-in-game-theory-set-3-tic-tac-toe-ai-finding-optimal-move/
+            static int Minimax(int[,] board, int maxDepth, int currentDepth, bool isMax)
+            {
+                int score = Evaluate(board);
+
+                if (score == 1000) return score;
+                if (score == -1000) return score; //minimizer won
+
+                // If there are no more moves and no winner then 
+                // it is a tie 
+                if (!IsMovesLeft() || currentDepth >= maxDepth) return Evaluate(board);
+
+                if (isMax)
+                {
+                    int best = -10000;
+                    //traverse all cells
+                    for(int col = 0; col < Board.GetLength(1); col++)
+                    {
+                        if (Board[0, col] == 0) //check if empty
+                        {
+                            //make the move
+                            int[,] tempBoard = CopyBoard(board);
+                            PlacePiece(col, tempBoard, PLAYER_1);
+
+
+                            //call minimax recursively and choose the max value
+                            int result = Minimax(board, maxDepth, currentDepth + 1, !isMax);
+                            if (result > best) best = result;
+
+                            //undo the move
+                            //RemovePiece(col, board, PLAYER_1);
+
+                        }
+                    }
+
+                    return best;
+                }
+                else// If this minimizer's move 
+                {
+                    int best = 10000;
+
+                    //traverse all cells
+                    for (int col = 0; col < Board.GetLength(1); col++)
+                    {
+                        if (Board[0, col] == 0) //check if empty
+                        {
+                            //make the move
+                            int[,] tempBoard = CopyBoard(board);
+                            PlacePiece(col, tempBoard, PLAYER_2);
+
+                            //call minimax recursively and choose the max value
+                            int result = Minimax(board, maxDepth, currentDepth + 1, !isMax);
+                            if (result < best) best = result;
+
+                            //undo the move
+                            //RemovePiece(col, board, PLAYER_2);
+
+                        }
+                    }
+
+                    return best;
+                }
+            }
+            */
+
+
+            static int[,] CopyBoard(int[,] board)
         {
             int[,] newArr = new int[6, 7];
 
@@ -235,7 +307,7 @@ namespace Connect4_Console
         }
 
 
-        static char convertToPlayer(int player)
+        static char onvertToPlayer(int player)
         {
             if (player == PLAYER_1) return 'X';
             if (player == PLAYER_2) return 'O';
