@@ -16,8 +16,11 @@ namespace Connect4_Console
         static readonly int PLAYER_1 = 1;
         static readonly int PLAYER_2 = 2;
 
+        static int MaxDepth = 1;
+
         static void Main(string[] args)
         {
+            /*
             Console.WriteLine("\nWinning moves: " + GetWinningMoveCount(Board, PLAYER_2));
 
 
@@ -27,7 +30,11 @@ namespace Connect4_Console
             Board[5, 6] = 1;
             PrintBoard(Board);
 
+            int[,] hhhh = CopyBoard(Board);
+            PlacePiece(1, hhhh, PLAYER_2); 
 
+            PrintBoard(hhhh);
+            */
 
             int input = 0;
 
@@ -36,9 +43,16 @@ namespace Connect4_Console
             {
                 if (int.TryParse(Console.ReadLine(), out input))
                 {
-                    if (!PlacePiece(input, Board, PLAYER_1)) continue;
+                    
+                    if (!PlacePiece(input, Board, PLAYER_2)) continue;
                     PrintBoard(Board);
 
+                    int colIndex = FindBestMove(Board, MaxDepth);
+                    PlacePiece(colIndex+1, Board, PLAYER_1);
+
+                    PrintBoard(Board);
+
+                    /*
                     int maxScore = -10000, tempIndex = 0;
                     for (int i = 0; i < 7; i++)
                     {
@@ -57,7 +71,7 @@ namespace Connect4_Console
 
                     PlacePiece(tempIndex+1, Board, PLAYER_2);
                     Console.WriteLine("P2s move");
-                    PrintBoard(Board);
+                    PrintBoard(Board); */
 
                 }
                 else
@@ -70,39 +84,141 @@ namespace Connect4_Console
             //Console.WriteLine("\nWinning moves: " + GetWinningMoveCount(Board, PLAYER_1));
         }
 
-
-        //https://www.geeksforgeeks.org/minimax-algorithm-in-game-theory-set-3-tic-tac-toe-ai-finding-optimal-move/
-        static int Minmax(int depth, bool isMaximizer)
+        static int FindBestMove(int[,] board, int maxDepth) //for player
         {
-            int score = Evaluate(Board);
+            int bestVal = -10000;
+            int bestMoveColumnIndex = 0;
 
-            // If Maximizer has won the game return his/her 
-            // evaluated score 
-            if (score == 1000) return score;
-
-            // If Minimizer has won the game return his/her 
-            // evaluated score 
-            if (score == -1000) return score;
-
-            if (!isMovesLeft()) return 0;
-
-            // If this maximizer's move 
-            if (isMaximizer)
+            for(int col = 0; col < board.GetLength(1); col++)
             {
-                int best = -1000;
+                //check if board empty
+                if (Board[0, col] == 0)
+                {
+                    //make the move
+                    int[,] tempBoard = CopyBoard(board);
+                    PlacePiece(col, tempBoard, PLAYER_1);
 
+                    int moveVal = Minimax(tempBoard, maxDepth, 0, false);
+
+                    //undo move
+                   // RemovePiece(col, board, PLAYER_1);
+
+                    if(moveVal > bestVal)
+                    {
+                        bestMoveColumnIndex = col;
+                        bestVal = moveVal;
+                    }
+
+                }
             }
 
+            Console.WriteLine("The value of the best Move is : " + bestVal);
 
-                return 0;
+            return bestMoveColumnIndex;
+        }
+
+        //https://www.geeksforgeeks.org/minimax-algorithm-in-game-theory-set-3-tic-tac-toe-ai-finding-optimal-move/
+        static int Minimax(int[,] board, int maxDepth, int currentDepth, bool isMax)
+        {
+            int score = Evaluate(board);
+
+            if (score == 1000) return score;
+            if (score == -1000) return score; //minimizer won
+
+            // If there are no more moves and no winner then 
+            // it is a tie 
+            if (!IsMovesLeft() || currentDepth >= maxDepth) return Evaluate(board);
+
+            if (isMax)
+            {
+                int best = -10000;
+                //traverse all cells
+                for(int col = 0; col < Board.GetLength(1); col++)
+                {
+                    if (Board[0, col] == 0) //check if empty
+                    {
+                        //make the move
+                        int[,] tempBoard = CopyBoard(board);
+                        PlacePiece(col, tempBoard, PLAYER_1);
+
+
+                        //call minimax recursively and choose the max value
+                        int result = Minimax(board, maxDepth, currentDepth + 1, !isMax);
+                        if (result > best) best = result;
+
+                        //undo the move
+                        //RemovePiece(col, board, PLAYER_1);
+
+                    }
+                }
+
+                return best;
+            }
+            else// If this minimizer's move 
+            {
+                int best = 10000;
+
+                //traverse all cells
+                for (int col = 0; col < Board.GetLength(1); col++)
+                {
+                    if (Board[0, col] == 0) //check if empty
+                    {
+                        //make the move
+                        int[,] tempBoard = CopyBoard(board);
+                        PlacePiece(col, tempBoard, PLAYER_2);
+
+                        //call minimax recursively and choose the max value
+                        int result = Minimax(board, maxDepth, currentDepth + 1, !isMax);
+                        if (result < best) best = result;
+
+                        //undo the move
+                        //RemovePiece(col, board, PLAYER_2);
+
+                    }
+                }
+
+                return best;
+            }
         }
 
 
+        static int[,] CopyBoard(int[,] board)
+        {
+            int[,] newArr = new int[6, 7];
+
+            for (int row = 0; row < board.GetLength(0); row++)
+            {
+                for (int col = 0; col < board.GetLength(1); col++)
+                {
+                    newArr[row, col] = board[row, col];
+                }
+            }
+
+            return newArr;
+        }
+
+
+        static void RemovePiece(int columnIndex, int[,] board, int player) //columnIndex should be between 0 and 6
+        {
+  
+            for (int row = 0; row < board.GetLength(0); row++)
+            {
+                if (board[row, columnIndex] == player)
+                {
+                    board[row, columnIndex] = 0;
+                    return;
+                }
+            }
+
+        }
 
         static bool PlacePiece(int columnIndex, int[,]board, int player) //columnIndex should be between 0 and 6
         {
             columnIndex -= 1; //player inputs a column from 1-7, but in array we need to subtract 1 to index
             if (columnIndex < 0 || columnIndex > board.GetLength(0)) return false;
+
+            if (board[0, columnIndex] != 0) return false; //check if top spot is ok
+           
 
             for (int row=board.GetLength(0)-1;row>=0;row--)
             {
@@ -118,6 +234,14 @@ namespace Connect4_Console
             return true;
         }
 
+
+        static char convertToPlayer(int player)
+        {
+            if (player == PLAYER_1) return 'X';
+            if (player == PLAYER_2) return 'O';
+            return ' ';
+        }
+
         static void PrintBoard(int[,] board)
         {
             for (int row=0;row<board.GetLength(0);row++)
@@ -129,7 +253,7 @@ namespace Connect4_Console
                     {
                         Console.WriteLine(board[row, col] + "]");
                         break;
-                    }
+                    } 
                     Console.Write(board[row,col] + ", ");
                 }
             }
@@ -194,8 +318,9 @@ namespace Connect4_Console
             return winningMoves;
         }
 
-        static bool isMovesLeft()
+        static bool IsMovesLeft()
         {
+            
             for (int row = 0; row < Board.GetLength(0); row++)
                 for (int col = 0; col < Board.GetLength(1); col++)
                     if (Board[row, col] == 0) return true;
@@ -207,25 +332,25 @@ namespace Connect4_Console
         {
             //There should be 69 possible ways to win on an empty board.
             //1 - look at rows first (24 ways to win)
-            for (int row = 0; row < Board.GetLength(0); row++)
+            for (int row = 0; row < board.GetLength(0); row++)
                 for (int col = 0; col < 4; col++) //only need to look at 4 ways to win per  
-                    if ((Board[row, col] == Board[row, col + 1]) &&
-                       (Board[row, col] == Board[row, col + 2]) &&
-                       (Board[row, col] == Board[row, col + 3]))
-                            if (Board[row, col] == PLAYER_1)
+                    if ((board[row, col] == board[row, col + 1]) &&
+                       (board[row, col] == board[row, col + 2]) &&
+                       (board[row, col] == board[row, col + 3]))
+                            if (board[row, col] == PLAYER_1)
                                 return 1000;
-                            else if (Board[row, col] == PLAYER_2)
+                            else if (board[row, col] == PLAYER_2)
                                 return -1000;
 
             //2 - look at vertical (3 * 7 = 21 ways)
             for (int row = 0; row < 3; row++)
-                for (int col = 0; col < Board.GetLength(1); col++) //only need to look at 4 ways to win per  
-                    if ((Board[row, col] == Board[row + 1, col]) &&
-                       (Board[row, col] == Board[row + 1, col]) &&
-                       (Board[row, col] == Board[row + 1, col]))
-                            if (Board[row, col] == PLAYER_1)
+                for (int col = 0; col < board.GetLength(1); col++) //only need to look at 4 ways to win per  
+                    if ((board[row, col] == board[row + 1, col]) &&
+                       (board[row, col] == board[row + 1, col]) &&
+                       (board[row, col] == board[row + 1, col]))
+                            if (board[row, col] == PLAYER_1)
                                 return 1000;
-                            else if (Board[row, col] == PLAYER_2)
+                            else if (board[row, col] == PLAYER_2)
                                 return -1000;
 
             //3 - look at diagonal right and down (12), right to up (12)
@@ -233,29 +358,30 @@ namespace Connect4_Console
             {
                 for (int row = 0; row < 3; row++)
                 {
-                    if ((Board[row, col] == Board[row + 1, col + 1]) &&
-                        (Board[row, col] == Board[row + 2, col + 2]) &&
-                        (Board[row, col] == Board[row + 3, col + 3]))
-                            if (Board[row, col] == PLAYER_1)
+                    if ((board[row, col] == board[row + 1, col + 1]) &&
+                        (board[row, col] == board[row + 2, col + 2]) &&
+                        (board[row, col] == board[row + 3, col + 3]))
+                            if (board[row, col] == PLAYER_1)
                                 return 1000;
-                            else if (Board[row, col] == PLAYER_2)
+                            else if (board[row, col] == PLAYER_2)
                                 return -1000;
                 }
 
                 for (int row = 3; row < 6; row++)
                 {
-                    if ((Board[row, col] == Board[row - 1, col + 1]) &&
-                        (Board[row, col] == Board[row - 2, col + 2]) &&
-                        (Board[row, col] == Board[row - 3, col + 3]))
-                            if (Board[row, col] == PLAYER_1)
+                    if ((board[row, col] == board[row - 1, col + 1]) &&
+                        (board[row, col] == board[row - 2, col + 2]) &&
+                        (board[row, col] == board[row - 3, col + 3]))
+                            if (board[row, col] == PLAYER_1)
                                 return 1000;
-                            else if (Board[row, col] == PLAYER_2)
+                            else if (board[row, col] == PLAYER_2)
                                 return -1000;
                 }
             }
 
             return 0; //dumbest ai return 0 if neither has won.
         }
+
 
 
 
